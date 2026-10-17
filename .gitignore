@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+artifacts/
+.dotnet/
+.packages/
+.vs/
+TestResults/
+*.user
+# Local development notes contain machine-specific paths and verification history.
+/HANDOFF.md
+/PLAN.md

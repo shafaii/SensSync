@@ -1,0 +1,15 @@
+// Synthetic fixture. No personal game configuration is committed.
+"config"
+{
+    "convars"
+    {
+        "joy_yaw_sensitivity" "42"
+        "sensitivity_extra" "99"
+        "m_yaw" "0.022"
+        "m_pitch" "0.022"
+        "sensitivity_y_scale" "1"
+        "sensitivity" "1.0"
+        "zoom_sensitivity_ratio" "0.79"
+        "unrelated" "quoted \"value\" and C:\\path"
+    }
+}

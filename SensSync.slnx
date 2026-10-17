@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SensSync.Core/SensSync.Core.csproj" />
+    <Project Path="src/SensSync.Desktop/SensSync.Desktop.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SensSync.Tests/SensSync.Tests.csproj" />
+  </Folder>
+</Solution>
