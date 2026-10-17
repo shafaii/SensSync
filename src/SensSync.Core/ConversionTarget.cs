@@ -21,7 +21,7 @@ public sealed record ConversionTarget(string Name, double Slope, double Offset, 
             ? new LinearSensitivityModel(Slope).FromCmPer360(cm, dpi)
             : (914.4 / dpi / cm - Offset) / Slope;
         if (!double.IsFinite(value) || value < Minimum || value > Maximum || (Offset == 0 && value <= 0))
-            throw new ArgumentException($"{Name}: this distance is outside the supported sensitivity range" +
+            throw new ArgumentException($"{Name}: this match is outside the supported sensitivity range" +
                 (double.IsFinite(Maximum) ? $" ({Minimum:0}-{Maximum:0})." : "."));
         return value;
     }

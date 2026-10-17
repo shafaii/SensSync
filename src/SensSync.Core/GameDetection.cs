@@ -1,8 +1,8 @@
 namespace SensSync.Core;
 
-public enum GameId { Cs2, Valorant, MarvelRivals }
+public enum GameId { Cs2, Valorant, MarvelRivals, Battlefield6 }
 public sealed record ObservedProcess(int Id, string ExecutableName);
-public sealed record GameDetectionState(GameId? LastRelevantGame, bool Cs2Running, bool ValorantRunning, bool DetectionAvailable, bool MarvelRivalsRunning = false)
+public sealed record GameDetectionState(GameId? LastRelevantGame, bool Cs2Running, bool ValorantRunning, bool DetectionAvailable, bool MarvelRivalsRunning = false, bool Battlefield6Running = false)
 {
     public IEnumerable<GameId> RunningGames
     {
@@ -10,6 +10,7 @@ public sealed record GameDetectionState(GameId? LastRelevantGame, bool Cs2Runnin
         {
             if (Cs2Running) yield return GameId.Cs2;
             if (ValorantRunning) yield return GameId.Valorant;
+            if (Battlefield6Running) yield return GameId.Battlefield6;
             if (MarvelRivalsRunning) yield return GameId.MarvelRivals;
         }
     }
@@ -22,13 +23,14 @@ public sealed class GameDetectionTracker
 
     // Exact game executables only; launcher names are deliberately excluded.
     public static IReadOnlyList<string> ExecutableNames { get; } = Array.AsReadOnly(new[]
-        { "cs2.exe", "VALORANT-Win64-Shipping.exe", "Marvel-Win64-Shipping.exe" });
+        { "cs2.exe", "VALORANT-Win64-Shipping.exe", "Marvel-Win64-Shipping.exe", "bf6.exe" });
 
     public static GameId? Recognize(string executableName) => executableName.ToLowerInvariant() switch
     {
         "cs2.exe" => GameId.Cs2,
         "valorant-win64-shipping.exe" => GameId.Valorant,
         "marvel-win64-shipping.exe" => GameId.MarvelRivals,
+        "bf6.exe" => GameId.Battlefield6,
         _ => null
     };
 
@@ -40,6 +42,7 @@ public sealed class GameDetectionTracker
         return new(LastRelevantGame,
             processes.Any(p => Recognize(p.ExecutableName) == GameId.Cs2),
             processes.Any(p => Recognize(p.ExecutableName) == GameId.Valorant), available,
-            processes.Any(p => Recognize(p.ExecutableName) == GameId.MarvelRivals));
+            processes.Any(p => Recognize(p.ExecutableName) == GameId.MarvelRivals),
+            processes.Any(p => Recognize(p.ExecutableName) == GameId.Battlefield6));
     }
 }

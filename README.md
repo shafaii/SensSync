@@ -1,27 +1,22 @@
 # SensSync
 
-A compact, read-only Windows desktop utility for carrying horizontal hipfire sensitivity from CS2 or a physical-distance target to another game.
+A simple, read-only Windows sensitivity converter.
 
-## Features
+1. Open your source game. SensSync detects it and reads its saved sensitivity.
+2. Choose your mouse DPI from the dropdown (default **1600**).
+3. Choose the target game, copy the result, and enter it in that game.
 
-- Read saved CS2 sensitivity and yaw, or enter CS2 values manually.
-- Convert a physical cm/360 target using your mouse DPI.
-- Select **Target game** in the result card: Valorant, Counter-Strike 2, Marvel Rivals, or Battlefield 6 (experimental).
-- Clear result display, full precision in Details, and a Copy sensitivity button.
-- In-app **Dark mode** toggle. The theme applies immediately to the main window and Details and resets to light when the app closes. Windows high contrast takes precedence; some native window chrome follows the OS theme.
-- Recognize CS2, Valorant and Marvel Rivals independently of conversion support. Recognition persists when focus moves away from a running game.
+The main screen contains no manual sensitivity entry, yaw controls or physical-distance fields. A dark-mode toggle is available. Theme selection lasts for the session.
 
-Marvel Rivals and Valorant support output conversion only; their settings are not read. BF6 is an experimental infantry hipfire output, with no recognition or settings reading added. CS2 settings are saved-file snapshots, not live in-game readings.
+## Supported games
 
-## Use
+CS2, Valorant, Marvel Rivals and Battlefield 6 have saved-settings readers and conversion targets. **BF6 remains experimental.** Recognition follows the last focused running game and survives returning to SensSync. If multiple games are running without a known foreground source, select one. If saved accounts or hero profiles have different sensitivity values, select the relevant profile; the app never silently guesses which account or hero is active. Identical profiles require no selection.
 
-Choose a source and enter your actual mouse DPI. Select your CS2 account if prompted, or choose an existing VCFG file. For manual CS2 input, expand **Advanced: custom yaw** only when needed. Choose your target game, then copy the calculated value and enter it in that game yourself. Target CS2 assumes default yaw 0.022. BF6 uses a distinct affine menu-scale model and rejects values outside 0–100; validate experimental results in game. See [conversion models and sources](CONVERSION_MODELS.md).
+Settings refresh while the game is running. These are **saved settings**, not protected-memory readings: changes that have not been saved by the game can differ. Missing, malformed or ambiguous settings do not produce a copyable result. Details contains file provenance and diagnostics.
 
-The main result normally shows four decimal places; Copy retains up to nine decimal places. Details contains full calculation precision, saved-file provenance, diagnostics and limitations.
+No game files are modified. There is no auto-apply, memory inspection, injection, telemetry or network client. Conversion matches horizontal hipfire turn rate; scoped aim and perceived aiming can differ. See [model assumptions and sources](CONVERSION_MODELS.md).
 
-No game files are modified. There is no auto-apply, protected-memory access, injection, tray, telemetry, network client, persistent profile or DPI manipulation. Equivalent cm/360 does not guarantee identical FOV, scoped aim, vertical response or perceived aiming. Valorant yaw 0.07 remains a candidate pending physical in-game validation.
-
-## Build and test
+## Build and run
 
 Requires Windows and the .NET 10 SDK (see `global.json`).
 
@@ -32,20 +27,10 @@ dotnet test SensSync.slnx -c Release --no-build
 dotnet run --project src/SensSync.Desktop
 ```
 
-To produce a self-contained Windows x64 folder and ZIP:
+To build a self-contained Windows x64 folder and ZIP, run `./scripts/publish.ps1`. Extract the whole ZIP and launch `SensSync.exe`.
 
-```powershell
-./scripts/publish.ps1
-```
+## Verification
 
-The ZIP includes the .NET runtime. Extract the whole archive and run `SensSync.exe`; do not move the executable away from its accompanying files.
+Release build and **86 tests** passed locally on Windows. Tests cover bounded parsers, duplicate/missing values, account and hero ambiguity, conversion, recognition, foreground changes, DPI presets, theme switching, clipboard precision and layout. Existing core parser and math tests remain; UI tests reflect the simplified workflow.
 
-## Verification and limitations
-
-Release build and **74 tests** passed locally on Windows. Tests use synthetic configurations and cover conversion, parsing, discovery, process recognition, foreground transitions, layout, theme switching, target selection, target ranges and clipboard precision. Light/dark main and Details windows were rendered for visual inspection.
-
-Marvel Rivals was recognized on the development machine using its observed `Marvel-Win64-Shipping.exe` process and matching window title. The launcher alone is not considered a running game. Detection is based on exact process names, not executable authentication. Other storefront executable names are not qualified.
-
-Manual game-to-SensSync Alt+Tab trials, actual multi-monitor DPI changes, screen readers, high contrast and clean-machine packaging acceptance remain outstanding. Programmatic layout checks are not a substitute for real display-scaling tests.
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for implementation boundaries and precision details.
+Production readers were exercised against local CS2, Valorant, Rivals and BF6 saved files. File hashes remained unchanged. Light/dark renders were inspected. Current-game unsaved-setting changes, other storefront layouts, actual multi-monitor DPI transitions, screen readers and high contrast require further acceptance testing. BF6 model accuracy still needs physical in-game validation.

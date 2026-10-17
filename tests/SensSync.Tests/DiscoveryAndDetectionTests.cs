@@ -79,6 +79,7 @@ public sealed class DiscoveryAndDetectionTests
     [InlineData("VALORANT-Win64-Shipping.exe", GameId.Valorant)]
     [InlineData("Marvel-Win64-Shipping.exe", GameId.MarvelRivals)]
     [InlineData("MARVEL-WIN64-SHIPPING.EXE", GameId.MarvelRivals)]
+    [InlineData("bf6.exe", GameId.Battlefield6)]
     public void RecognizesExactGameExecutablesAndRetainsAcrossForegroundTransitions(string executable, GameId expected)
     {
         var tracker = new GameDetectionTracker();
