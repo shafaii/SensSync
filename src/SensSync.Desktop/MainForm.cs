@@ -10,6 +10,7 @@ internal sealed class MainForm : Form
     private readonly Action<string> copy;
     private readonly bool monitorGames;
     private readonly ComboBox source = new() { Name = "Source", DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
+    private readonly ComboBox target = new() { Name = "Target", AccessibleName = "Target game", DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
     private readonly ComboBox account = new() { Name = "Account", DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
     private readonly TextBox dpi = Input("Dpi", "Enter mouse DPI, e.g. 800");
     private readonly TextBox sensitivity = Input("Sensitivity", "CS2 sensitivity");
@@ -66,7 +67,7 @@ internal sealed class MainForm : Form
         {
             int row = body.RowCount++;
             body.RowStyles.Add(new(SizeType.AutoSize));
-            control.Margin = new Padding(0, 0, 0, 8);
+            control.Margin = new Padding(0, 0, 0, 5);
             body.Controls.Add(control, 0, row);
         }
         var header = UiTheme.Stack();
@@ -91,6 +92,9 @@ internal sealed class MainForm : Form
         source.Items.AddRange(["Saved CS2 settings", "Manual CS2 sensitivity", "Physical distance (cm/360)"]);
         UiTheme.ConfigureCombo(source);
         UiTheme.ConfigureCombo(account);
+        UiTheme.ConfigureCombo(target);
+        target.Items.AddRange(ConversionTarget.All.Cast<object>().ToArray());
+        target.SelectedIndex = 0;
         source.AccessibleName = "Conversion source";
         account.AccessibleName = "CS2 account";
         Add(Field("&Source", source));
@@ -119,7 +123,7 @@ internal sealed class MainForm : Form
         result.Font = resultFont;
         result.AccessibleName = "Equivalent Valorant sensitivity, rounded display";
         result.Text = "—";
-        output.Controls.Add(UiTheme.Caption("VALORANT · horizontal hipfire"));
+        output.Controls.Add(Field("&Target game", target));
         output.Controls.Add(result);
         physical.ForeColor = UiTheme.Muted;
         output.Controls.Add(physical);
@@ -157,6 +161,7 @@ internal sealed class MainForm : Form
         body.SizeChanged += (_, _) => ResizeLabels();
         advanced.CheckedChanged += (_, _) => yawRow.Visible = source.SelectedIndex == 1 && advanced.Checked;
         feedbackTimer.Tick += (_, _) => { feedbackTimer.Stop(); copyFeedback.Text = ""; };
+        target.SelectedIndexChanged += (_, _) => Recalculate();
         source.SelectedIndexChanged += (_, _) => SwitchSource();
         account.SelectedIndexChanged += (_, _) => { if (!updating) ReadSelected(); };
         foreach (var input in new[] { dpi, sensitivity, yaw, distance }) input.TextChanged += (_, _) => Recalculate();
@@ -263,9 +268,12 @@ internal sealed class MainForm : Form
         Recalculate();
     }
 
+    private ConversionTarget SelectedTarget => (ConversionTarget?)target.SelectedItem ?? ConversionTarget.Valorant;
+
     private void Recalculate()
     {
         if (updating) return;
+        result.AccessibleName = $"Equivalent {SelectedTarget.Name} sensitivity, rounded display";
         feedbackTimer.Stop();
         copyFeedback.Text = "";
         exactValue = null;
@@ -279,25 +287,30 @@ internal sealed class MainForm : Form
             double mouseDpi = Number(dpi.Text, "mouse DPI");
             double cm = source.SelectedIndex == 2 ? Number(distance.Text, "distance in cm/360")
                 : new LinearSensitivityModel(Number(yaw.Text, "CS2 yaw")).ToCmPer360(Number(sensitivity.Text, "CS2 sensitivity"), mouseDpi);
-            var model = new LinearSensitivityModel(LinearSensitivityModel.ValorantYawCandidate);
-            double valorant = model.FromCmPer360(cm, mouseDpi);
-            string display = valorant.ToString("0.#########", CultureInfo.InvariantCulture);
-            if (!double.TryParse(display, CultureInfo.InvariantCulture, out double rounded) || rounded <= 0)
+            physical.Text = $"≈ {cm.ToString("0.##", CultureInfo.CurrentCulture)} cm / 360° · hipfire";
+            double converted = SelectedTarget.FromCmPer360(cm, mouseDpi);
+            string display = converted.ToString("0.#########", CultureInfo.InvariantCulture);
+            if (!double.TryParse(display, CultureInfo.InvariantCulture, out double rounded) || (rounded < 0 || (rounded == 0 && converted != 0)))
                 throw new ArgumentException("The result is too small to copy at nine decimal places.");
             copiedValue = display;
-            exactValue = valorant.ToString("G17", CultureInfo.InvariantCulture);
-            result.Text = valorant >= 0.00005 && valorant < 1000000
-                ? valorant.ToString("0.0000", CultureInfo.InvariantCulture)
-                : valorant.ToString("0.###E+0", CultureInfo.InvariantCulture);
-            physical.Text = $"≈ {cm.ToString("0.##", CultureInfo.CurrentCulture)} cm / 360°";
+            exactValue = converted.ToString("G17", CultureInfo.InvariantCulture);
+            result.Text = (converted == 0 || converted >= 0.00005) && converted < 1000000
+                ? converted.ToString("0.0000", CultureInfo.InvariantCulture)
+                : converted.ToString("0.###E+0", CultureInfo.InvariantCulture);
             status.Text = source.SelectedIndex == 0
                 ? "Saved values · startup overrides may differ. See Details."
-                : "Ready to copy into Valorant.";
+                : $"Ready to copy into {SelectedTarget.Name}.";
+            if (SelectedTarget == ConversionTarget.Battlefield6)
+                status.Text = "Experimental BF6 hipfire value · validate in game. See Details.";
             if (!string.IsNullOrEmpty(discoveryWarnings) && source.SelectedIndex == 0)
                 status.Text += " Discovery was incomplete; see Details.";
             copyButton.Enabled = true;
         }
-        catch (ArgumentException e) { status.Text = e.Message; physical.Text = "Complete the source values above"; }
+        catch (ArgumentException e)
+        {
+            status.Text = e.Message;
+            if (!physical.Text.StartsWith("≈", StringComparison.Ordinal)) physical.Text = "Complete the source values above";
+        }
     }
 
     private static double Number(string text, string label)
@@ -345,9 +358,9 @@ internal sealed class MainForm : Form
         string values = $"Mouse DPI (entered): {dpi.Text}\r\n" +
             (source.SelectedIndex == 2 ? $"Distance: {distance.Text} cm/360" : $"CS2 sensitivity: {sensitivity.Text}\r\nCS2 yaw: {yaw.Text}") +
             (saved && snapshot is not null ? $"\r\nPitch: {snapshot.Settings.Pitch}\r\nVertical scale: {snapshot.Settings.VerticalScale}" : "") +
-            $"\r\n\r\nValorant (full calculation precision): {exactValue ?? "Unavailable"}\r\nClipboard value: {copiedValue ?? "Unavailable"}";
+            $"\r\n\r\n{SelectedTarget.Name} (full calculation precision): {exactValue ?? "Unavailable"}\r\nClipboard value: {copiedValue ?? "Unavailable"}";
         string notes = "Horizontal hipfire only. FOV, scoped aim and vertical response may differ. External acceleration can invalidate this calculation.\r\n\r\n" +
-            "Valorant yaw 0.07 is a research-backed candidate, pending actual-game validation. Copy rounds to nine decimal places; Valorant may round further.\r\n\r\n" +
+            SelectedTarget.Notes + "\r\nCopy rounds to nine decimal places; the target game may round further.\r\nModels and sources: see CONVERSION_MODELS.md in the repository.\r\n\r\n" +
             "No game files are modified. Mouse DPI is entered manually; it is never detected or changed.";
         string diagnostics = saved
             ? (snapshot is null ? "No saved configuration loaded." : $"SHA-256: {snapshot.Sha256}") +

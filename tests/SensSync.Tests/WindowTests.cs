@@ -158,7 +158,7 @@ public sealed class WindowTests
             var tracker = new GameDetectionTracker();
             form.UpdateDetection(tracker.Observe([new(7, "Marvel-Win64-Shipping.exe")], 7));
             Assert.Contains("Marvel Rivals running", Find<Label>(form, "Detection").Text);
-            Assert.Contains("sensitivity integration unsupported", Find<Label>(form, "Detection").Text);
+            Assert.Contains("conversion target only", Find<Label>(form, "Detection").Text);
             Assert.Equal(0, Find<ComboBox>(form, "Source").SelectedIndex);
             Find<TextBox>(form, "Dpi").Text = "800";
             Assert.Equal("0.3143", Find<TextBox>(form, "Result").Text);
@@ -234,6 +234,55 @@ public sealed class WindowTests
             }
             Find<TextBox>(form, "Dpi").Clear();
             Assert.False(Find<Button>(form, "Copy").Enabled);
+            form.Close();
+        });
+    }
+
+    [Theory]
+    [InlineData(0, "0.2011", "0.201142857")]
+    [InlineData(1, "0.6400", "0.64")]
+    [InlineData(2, "0.8046", "0.804571429")]
+    [InlineData(3, "6.7762", "6.776170102")]
+    public void TargetSelectionUpdatesResultCopyDetailsAndPreservesSource(int index, string display, string clipboard)
+    {
+        RunSta(() =>
+        {
+            using var files = new TestFiles();
+            var candidate = new Cs2ConfigCandidate(files.Write("sample.vcfg", TestFiles.Standard.Replace("\"1.0\"", "\"0.64\"")), "sample", null);
+            string? copied = null;
+            using var form = new MainForm(() => new([candidate], []), value => copied = value, false);
+            form.Font = new Font("Segoe UI", 10);
+            form.Show();
+            form.RefreshConfigs();
+            Find<TextBox>(form, "Dpi").Text = "1600";
+            Find<ComboBox>(form, "Target").SelectedIndex = index;
+            Assert.Equal(display, Find<TextBox>(form, "Result").Text);
+            Find<Button>(form, "Copy").PerformClick();
+            Assert.Equal(clipboard, copied);
+            Assert.Equal(0, Find<ComboBox>(form, "Source").SelectedIndex);
+            using (var details = form.CreateDetailsDialog())
+                Assert.Contains(ConversionTarget.All[index].Name + " (full calculation precision)", Find<TextBox>(details, "Detected values").Text);
+            form.UpdateDetection(new(GameId.MarvelRivals, false, false, true, true));
+            Assert.Equal(index, Find<ComboBox>(form, "Target").SelectedIndex);
+            Find<CheckBox>(form, "DarkMode").Checked = true;
+            Application.DoEvents();
+            Assert.False(Find<TableLayoutPanel>(form, "Body").VerticalScroll.Visible);
+            string? directory = Environment.GetEnvironmentVariable("SENSSYNC_UI_CAPTURE");
+            if (directory is not null)
+            {
+                Directory.CreateDirectory(directory);
+                using var bitmap = new Bitmap(form.Width, form.Height);
+                form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, form.Size));
+                bitmap.Save(Path.Combine(directory, $"target-{index}.png"));
+            }
+            Find<ComboBox>(form, "Source").SelectedIndex = 2;
+            Find<TextBox>(form, "Distance").Text = "1000";
+            Find<ComboBox>(form, "Target").SelectedIndex = 3;
+            Assert.False(Find<Button>(form, "Copy").Enabled);
+            Assert.Equal("—", Find<TextBox>(form, "Result").Text);
+            Assert.Empty(Find<Label>(form, "CopyFeedback").Text);
+            Find<ComboBox>(form, "Target").SelectedIndex = 0;
+            Assert.True(Find<Button>(form, "Copy").Enabled);
             form.Close();
         });
     }

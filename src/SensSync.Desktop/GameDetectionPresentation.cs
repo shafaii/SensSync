@@ -16,7 +16,7 @@ internal static class GameDetectionPresentation
     {
         GameId.Cs2 => cs2Readable ? "saved settings readable" : "saved settings not loaded",
         GameId.Valorant => "conversion target only; settings reading unsupported",
-        GameId.MarvelRivals => "sensitivity integration unsupported",
+        GameId.MarvelRivals => "conversion target only; settings reading unsupported",
         _ => throw new ArgumentOutOfRangeException(nameof(game))
     };
 
@@ -27,7 +27,7 @@ internal static class GameDetectionPresentation
             return state.DetectionAvailable ? "No game detected" : "Game detection unavailable";
         var relevant = state.LastRelevantGame is { } last && running.Contains(last) ? last : running[^1];
         string names = string.Join(", ", running.Select(Name));
-        string integration = relevant == GameId.Valorant ? "conversion target only" : Integration(relevant, cs2Readable);
+        string integration = relevant is GameId.Valorant or GameId.MarvelRivals ? "conversion target only" : Integration(relevant, cs2Readable);
         return $"{names} running\n{(running.Length > 1 ? Name(relevant) + ": " : "")}{integration}" +
             (state.DetectionAvailable ? "" : " · detection incomplete");
     }

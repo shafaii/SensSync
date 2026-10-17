@@ -10,7 +10,7 @@ Data flow: discover → explicitly resolve ambiguity → read snapshot → enter
 
 ## M1 verification boundary (2026-10-14)
 
-All 63 automated tests pass, including isolated STA window tests. The published self-contained app was inspected through Windows Computer Use: selected real CS2 settings, DPI entry, conversion, Details, clipboard round trip, and saved/manual layouts work at the current desktop scale. Saved yaw is shown in Details; manual yaw is editable in a collapsible advanced row. The selected real file's SHA-256 equals the baseline from before implementation. There is no application file-write API: the game reader opens files with `FileAccess.Read`; the only byte writes in Core are to an in-memory buffer.
+All 74 automated tests pass, including isolated STA window tests. The published self-contained app was inspected through Windows Computer Use: selected real CS2 settings, DPI entry, conversion, Details, clipboard round trip, and saved/manual layouts work at the current desktop scale. Saved yaw is shown in Details; manual yaw is editable in a collapsible advanced row. The selected real file's SHA-256 equals the baseline from before implementation. There is no application file-write API: the game reader opens files with `FileAccess.Read`; the only byte writes in Core are to an in-memory buffer.
 
 Detection is process-basename based, not executable authentication. State transitions are unit-tested, and the no-supported-game-running state was observed; actual CS2/Valorant foreground transitions are not yet exercised. PerMonitorV2 is configured, but cross-monitor/100–200% scaling, high contrast and screen-reader acceptance remain unverified. The self-contained runtime is packaged and the executable launched on the development machine; a clean machine without .NET has not been tested. Static source inspection finds no networking component; no packet capture was performed.
 
@@ -44,4 +44,8 @@ Source2All has no license file; Autosens/SmartSens declare MIT without complete 
 
 The main window owns a session-only light/dark toggle; UiTheme applies a palette recursively and Details receives the selected mode. Theme changes do not recreate controls or recalculate inputs. System high contrast takes precedence. Normal DWM title-bar appearance is requested when supported; native borders and scrollbars may retain OS styling.
 
-Recognition includes the observed Marvel-Win64-Shipping.exe process without adding a sensitivity adapter. Running-process state, focus history, and integration readiness remain distinct. CS2 saved-file readiness is based on a successful snapshot read; Valorant is a conversion target only.
+Recognition includes the observed Marvel-Win64-Shipping.exe process without adding a sensitivity adapter. Running-process state, focus history, and integration readiness remain distinct. CS2 saved-file readiness is based on a successful snapshot read; Valorant and Marvel Rivals are conversion targets only.
+
+## Selectable output targets
+
+ConversionTarget supplies output-only models for Valorant, default-yaw CS2, Marvel Rivals and experimental BF6. Existing source parsing and cm/360 calculation are unchanged. BF6 uses an affine rate model and enforces the 0–100 menu range. Target changes invalidate copy feedback and recompute display/clipboard/details without changing source, DPI or detected-game state. See CONVERSION_MODELS.md for numeric provenance and live-game validation limits.

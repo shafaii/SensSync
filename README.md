@@ -1,20 +1,21 @@
 # SensSync
 
-A compact, read-only Windows desktop utility for carrying horizontal hipfire sensitivity from CS2 to Valorant.
+A compact, read-only Windows desktop utility for carrying horizontal hipfire sensitivity from CS2 or a physical-distance target to another game.
 
 ## Features
 
 - Read saved CS2 sensitivity and yaw, or enter CS2 values manually.
 - Convert a physical cm/360 target using your mouse DPI.
+- Select **Target game** in the result card: Valorant, Counter-Strike 2, Marvel Rivals, or Battlefield 6 (experimental).
 - Clear result display, full precision in Details, and a Copy sensitivity button.
 - In-app **Dark mode** toggle. The theme applies immediately to the main window and Details and resets to light when the app closes. Windows high contrast takes precedence; some native window chrome follows the OS theme.
 - Recognize CS2, Valorant and Marvel Rivals independently of conversion support. Recognition persists when focus moves away from a running game.
 
-**Marvel Rivals recognition does not provide sensitivity integration.** Valorant is a conversion target; its settings are not read. CS2 settings are saved-file snapshots, not live in-game readings.
+Marvel Rivals and Valorant support output conversion only; their settings are not read. BF6 is an experimental infantry hipfire output, with no recognition or settings reading added. CS2 settings are saved-file snapshots, not live in-game readings.
 
 ## Use
 
-Choose a source and enter your actual mouse DPI. Select your CS2 account if prompted, or choose an existing VCFG file. For manual CS2 input, expand **Advanced: custom yaw** only when needed. Copy the calculated value and enter it in Valorant yourself.
+Choose a source and enter your actual mouse DPI. Select your CS2 account if prompted, or choose an existing VCFG file. For manual CS2 input, expand **Advanced: custom yaw** only when needed. Choose your target game, then copy the calculated value and enter it in that game yourself. Target CS2 assumes default yaw 0.022. BF6 uses a distinct affine menu-scale model and rejects values outside 0–100; validate experimental results in game. See [conversion models and sources](CONVERSION_MODELS.md).
 
 The main result normally shows four decimal places; Copy retains up to nine decimal places. Details contains full calculation precision, saved-file provenance, diagnostics and limitations.
 
@@ -41,7 +42,7 @@ The ZIP includes the .NET runtime. Extract the whole archive and run `SensSync.e
 
 ## Verification and limitations
 
-Release build and **63 tests** passed locally on Windows. Tests use synthetic configurations and cover conversion, parsing, discovery, process recognition, foreground transitions, layout, theme switching and clipboard precision. Light/dark main and Details windows were rendered for visual inspection.
+Release build and **74 tests** passed locally on Windows. Tests use synthetic configurations and cover conversion, parsing, discovery, process recognition, foreground transitions, layout, theme switching, target selection, target ranges and clipboard precision. Light/dark main and Details windows were rendered for visual inspection.
 
 Marvel Rivals was recognized on the development machine using its observed `Marvel-Win64-Shipping.exe` process and matching window title. The launcher alone is not considered a running game. Detection is based on exact process names, not executable authentication. Other storefront executable names are not qualified.
 
